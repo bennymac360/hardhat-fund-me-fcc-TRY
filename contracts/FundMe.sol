@@ -4,6 +4,7 @@ pragma solidity ^0.8.7;
 // 2. Imports
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 import "./PriceConverter.sol";
+import "hardhat/console.sol";
 
 // 3. Interfaces, Libraries, Contracts
 error FundMe__NotOwner();
@@ -58,6 +59,7 @@ contract FundMe {
 
     /// @notice Funds our contract based on the ETH/USD price
     function fund() public payable {
+        console.log("Contract being funded.......");
         require(
             msg.value.getConversionRate(s_priceFeed) >= MINIMUM_USD,
             "You need to spend more ETH!"
@@ -65,9 +67,11 @@ contract FundMe {
         // require(PriceConverter.getConversionRate(msg.value) >= MINIMUM_USD, "You need to spend more ETH!");
         s_addressToAmountFunded[msg.sender] += msg.value;
         s_funders.push(msg.sender);
+        console.log("Contract successfully funded");
     }
 
     function withdraw() public onlyOwner {
+        console.log("Performing withdrawl");
         for (
             uint256 funderIndex = 0;
             funderIndex < s_funders.length;
@@ -81,6 +85,7 @@ contract FundMe {
         // payable(msg.sender).transfer(address(this).balance);
         (bool success, ) = i_owner.call{value: address(this).balance}("");
         require(success);
+        console.log("Withdrawl complete!");
     }
 
     function cheaperWithdraw() public onlyOwner {
