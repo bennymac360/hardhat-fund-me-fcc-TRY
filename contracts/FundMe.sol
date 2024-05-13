@@ -48,6 +48,14 @@ contract FundMe {
         i_owner = msg.sender;
     }
 
+    fallback() external payable {
+        fund();
+    }
+
+    receive() external payable {
+        fund();
+    }
+
     /// @notice Funds our contract based on the ETH/USD price
     function fund() public payable {
         require(

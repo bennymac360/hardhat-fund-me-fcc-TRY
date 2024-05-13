@@ -15,12 +15,17 @@ describe("FundMe", function () {
         // const accounts = await ethers.getSigners()
         // deployer = accounts[0]
         deployer = (await getNamedAccounts()).deployer
+        console.log(`deployer is:${deployer}`)
         await deployments.fixture(["all"])
-        fundMe = await ethers.getContractAt("FundMe", deployer)
-        mockV3Aggregator = await ethers.getContractAt(
-            "MockV3Aggregator",
-            deployer
-        )
+
+        // had to use X = deployments.get() then getContractAt(X.abi,X.address) instead of getContract in V6
+
+        const contract = await deployments.get("FundMe")
+        fundMe = await ethers.getContractAt(contract.abi, contract.address)
+
+        const aggregator = await deployments.get("MockV3Aggregator")
+        // mockV3Aggregator = await ethers.getContractAt("MockV3Aggregator", deployer)
+        mockV3Aggregator = await ethers.getContractAt(aggregator.abi, deployer)
     })
     console.log("-----------test constructor-----------")
     describe("Constructor", async function () {
@@ -34,7 +39,7 @@ describe("FundMe", function () {
         // https://ethereum-waffle.readthedocs.io/en/latest/matchers.html
         // could also do assert.fail
         it("Fails if you don't send enough ETH", async function () {
-            await expect(fundMe.fund({ value: 1 })).to.be.revertedWith(
+            await expect(fundMe.fund()).to.be.revertedWith(
                 "You need to spend more ETH!"
             )
         })
