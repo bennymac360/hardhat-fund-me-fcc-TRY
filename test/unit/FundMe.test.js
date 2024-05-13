@@ -174,7 +174,7 @@ describe("FundMe", function () {
             const attackerConnectedContract = await fundMe.connect(attacker)
             await expect(
                 attackerConnectedContract.withdraw()
-            ).to.be.revertedWithCustomError(fundMe, "FundMe__NotOwner")
+            ).to.be.revertedWithCustomError(fundMe, "FundMe__NotOwner") // i referenced the contract and the custom error defined in FundMe.sol
         })
     })
     console.log("-----------FINISHED FundMe.test-----------")
