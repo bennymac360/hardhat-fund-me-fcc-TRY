@@ -67,7 +67,7 @@ module.exports = {
         currency: "USD",
         coinmarketcap: COINMARKETCAP_API_KEY,
         //token : "ETH",
-        //tokwn : "MATIC",
+        //token : "MATIC",
         token: "FLR",
     },
     Solcover: {
