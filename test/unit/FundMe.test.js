@@ -33,8 +33,8 @@ describe("FundMe", function () {
     console.log("-----------test constructor-----------")
     describe("Constructor", async function () {
         it("sets the aggregator addresses correctly", async function () {
-            const response = await fundMe.s_priceFeed
-            assert.equal(response, mockV3Aggregator.address)
+            const response = await fundMe.getPriceFeed()
+            assert.equal(response.target, mockV3Aggregator.address)
         })
     })
     console.log("-----------test fund-----------")
@@ -44,6 +44,10 @@ describe("FundMe", function () {
             await expect(fundMe.fund()).to.be.revertedWith(
                 "You need to spend more ETH!"
             )
+            // await expect(fundMe.fund()).to.be.revertedWithCustomError(
+            //     fundMe,
+            //     "FundMe__NotEnoughEth"
+            // )
         })
         it("updated the amount funded data structure", async function () {
             // funds contract with amount "sendValue"
@@ -175,6 +179,62 @@ describe("FundMe", function () {
             await expect(
                 attackerConnectedContract.withdraw()
             ).to.be.revertedWithCustomError(fundMe, "FundMe__NotOwner") // i referenced the contract and the custom error defined in FundMe.sol
+        })
+
+        it("Cheaper Withdraw testing....", async function () {
+            //Arrange
+            const accounts = await ethers.getSigners()
+            for (let i = 1; i < 8; i++) {
+                const fundMeConnectedContract = await fundMe.connect(
+                    accounts[i]
+                )
+                await fundMeConnectedContract.fund({ value: sendValue })
+            }
+            let startingFundMeBalance = await ethers.provider.getBalance(
+                fundMe.target
+            )
+            let startingDeployerBalance = await ethers.provider.getBalance(
+                deployer
+            )
+            // Act
+
+            // Call withdraw function
+            const transactionResponse = await fundMe.cheaperWithdraw()
+            // wait 1 block to get transactionResponse
+            const transactionReceipt = await transactionResponse.wait(1)
+            // gasUsed and gasPrice from used from transactionReceipt=transactionResponse
+            const { gasUsed, gasPrice } = transactionReceipt
+            // calculate gasCost = gasPrice x gasUsed
+            const gasCost = gasPrice * gasUsed
+
+            // Balance after withdrawing
+            const endingFundMeBlance = await ethers.provider.getBalance(
+                fundMe.target
+            )
+            let endingDeployerBalance = await ethers.provider.getBalance(
+                deployer
+            )
+
+            //ASSERT
+            // fundMe balance = 0
+            assert.equal(endingFundMeBlance, 0)
+            // deployer balance
+            assert.equal(
+                (startingFundMeBalance = (
+                    startingFundMeBalance + startingDeployerBalance
+                ).toString()),
+                (endingDeployerBalance = (endingDeployerBalance + gasCost) // MUST INCLUDE THE GAS COST!!
+                    .toString())
+            )
+            // Make sure funders array is reset properly
+            await expect(fundMe.getFunder(0)).to.be.reverted
+
+            for (let i = 1; i < 8; i++) {
+                assert.equal(
+                    await fundMe.getAddressToAmountFunded(accounts[i].address),
+                    0
+                )
+            }
         })
     })
     console.log("-----------FINISHED FundMe.test-----------")

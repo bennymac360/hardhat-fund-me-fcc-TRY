@@ -8,6 +8,7 @@ import "hardhat/console.sol";
 
 // 3. Interfaces, Libraries, Contracts
 error FundMe__NotOwner();
+error FundMe__NotEnoughEth();
 
 /**@title A sample Funding Contract
  * @author Patrick Collins
@@ -18,12 +19,17 @@ contract FundMe {
     // Type Declarations
     using PriceConverter for uint256;
 
-    // State variables
-    uint256 public constant MINIMUM_USD = 50 * 10**18;
-    address private immutable i_owner;
-    address[] private s_funders;
-    mapping(address => uint256) private s_addressToAmountFunded;
-    AggregatorV3Interface private s_priceFeed;
+    // State variables - GAS DEPENDING
+    // We must understand which variables are allocated to "STORAGE" as interacting with them costs gas
+    // Each storage slot is 32 bytes long and represents the byte version of the object
+    // NOTE interesting: even if variables are private or internal, by interogating "STORAGE" we can obtain these variables also, it's an advanced operation.
+    // MOST EXPENSIVE OPCODES ======> SLOAD & SSTORE
+        
+    uint256 public constant MINIMUM_USD = 50 * 10**18; //CONSTANT --> NOT STORED --> inserted in contract byte code
+    address private immutable i_owner; // IMMUTABLE --> NOT STORED --> inserted in contract byte code
+    address[] private s_funders; // STORED
+    mapping(address => uint256) private s_addressToAmountFunded; // STORED
+    AggregatorV3Interface private s_priceFeed; // STORED
 
     // Events (we have none!)
 
@@ -64,6 +70,9 @@ contract FundMe {
             msg.value.getConversionRate(s_priceFeed) >= MINIMUM_USD,
             "You need to spend more ETH!"
         );
+
+        // if (msg.value.getConversionRate(s_priceFeed) >= MINIMUM_USD) revert FundMe__NotEnoughEth();
+        
         // require(PriceConverter.getConversionRate(msg.value) >= MINIMUM_USD, "You need to spend more ETH!");
         s_addressToAmountFunded[msg.sender] += msg.value;
         s_funders.push(msg.sender);
@@ -74,10 +83,10 @@ contract FundMe {
         console.log("Performing withdrawl");
         for (
             uint256 funderIndex = 0;
-            funderIndex < s_funders.length;
+            funderIndex < s_funders.length; // EXPENSIVE!!! each iteration of the loop we read from s_funders to compare with funderIndex, can be improved
             funderIndex++
         ) {
-            address funder = s_funders[funderIndex];
+            address funder = s_funders[funderIndex]; // EXPENSIVE!!! each iteration we read from s_funders to allocate the funder
             s_addressToAmountFunded[funder] = 0;
         }
         s_funders = new address[](0);
@@ -89,11 +98,12 @@ contract FundMe {
     }
 
     function cheaperWithdraw() public onlyOwner {
+        // Read entire array of s_funders into memory of funders (array of address) 
         address[] memory funders = s_funders;
         // mappings can't be in memory, sorry!
         for (
             uint256 funderIndex = 0;
-            funderIndex < funders.length;
+            funderIndex < funders.length; //we use the memory-variable funders instead of reading from s_funders
             funderIndex++
         ) {
             address funder = funders[funderIndex];
@@ -104,6 +114,9 @@ contract FundMe {
         (bool success, ) = i_owner.call{value: address(this).balance}("");
         require(success);
     }
+
+
+    // View and Pure Functions
 
     /** @notice Gets the amount that an address has funded
      *  @param fundingAddress the address of the funder
