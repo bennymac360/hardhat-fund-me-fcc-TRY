@@ -81,7 +81,7 @@ module.exports = {
             //            4: 1,        // If on chain ID = 4 use account index 1
         },
         user: {
-            default: 5, // If "user" the default account is index 5 from the list
+            default: 0, // If "user" the default account is index 5 from the list
         },
     },
 }
