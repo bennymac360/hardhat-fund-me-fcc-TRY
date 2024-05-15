@@ -11,7 +11,9 @@ const networkConfig = {
         name: "avalanche",
         ethUsdPriceFeed: "0x976B3D034E162d8bD72D6b9C989d545b839003b0",
     },
-    // 31337 ?? Local??
+    31337: {
+        name: "localhost",
+    },
 }
 
 // I can define my development chains. I do this because I can deploy mock contracts on development chains to interact with during testing. VERY POWERFUL!
