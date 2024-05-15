@@ -1,4 +1,7 @@
 {
+  "name": "hardhat-fund-me",
+  "author": {"name":"Benjamin McNaughton"},
+  "version": "1.0.0",
   "devDependencies": {
     "@chainlink/contracts": "0.4.2",
     "@nomicfoundation/hardhat-chai-matchers": "^2.0.0",
@@ -22,5 +25,13 @@
   },
   "dependencies": {
     "dotenv": "^16.4.5"
+  },
+  "scripts":{
+    "test": "yarn hardhat test",
+    "test:staging": "yarn hardhat test --network sepolia",
+    "lint" : "yarn solhint 'contracts/*.sol'",
+    "lint:fix" : "yarn solhint 'contracts/*.sol' --fix ",
+    "format" : "yarn prettier --write .",
+    "coverage" : "yarn hardhat coverage"
   }
 }
